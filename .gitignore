@@ -48,7 +48,6 @@ vm/
 # Явно игнорируем данные ВМ
 vm/data/
 vm/backups/
-vm/app/
 
 # Виртуальное окружение Python
 .venv/

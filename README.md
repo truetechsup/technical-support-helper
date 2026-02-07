@@ -16,7 +16,6 @@ project/
 │   └── Dockerfile.*
 │
 └── vm/                   # Файлы для виртуальной машины (НЕ в Git)
-    ├── app/              # Клонируется из GitHub
     ├── data/             # База данных
     ├── backups/          # Бэкапы
     ├── scripts/
@@ -49,9 +48,6 @@ cd support-helper
 # Создаем директории для данных и бэкапов
 mkdir -p vm/data vm/backups
 chmod 777 vm/data
-
-# Копируем код приложения в vm/app
-cp -r app vm/app
 ```
 
 3. **Запустите приложение:**
@@ -79,14 +75,11 @@ docker compose logs -f
 
 ### Настройка Git для работы скрипта обновления
 
-После первого развертывания настройте Git в `vm/app`:
+После первого развертывания настройте Git в корне репозитория (если еще не настроен):
 
 ```bash
-cd vm/app
-git init
-git remote add origin https://github.com/your-username/support-helper.git
-git fetch origin
-git checkout -b main origin/main
+# Git уже настроен после клонирования, ничего дополнительно делать не нужно
+# Скрипт обновления работает с app/ из корня репозитория
 ```
 
 ### Обновление приложения
