@@ -2,7 +2,8 @@
 import json
 import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from database import search_errors, init_db
+from database import search_errors, init_db, add_error
+import uuid
 
 class APIHandler(BaseHTTPRequestHandler):
     """Обработчик HTTP запросов для API"""
@@ -19,18 +20,41 @@ class APIHandler(BaseHTTPRequestHandler):
         """Обработка POST запросов"""
         if self.path == '/api/search':
             self.handle_search()
+        elif self.path == '/api/add':
+            self.handle_add()
         else:
             self.send_error(404)
     
     def do_GET(self):
-        """Обработка GET запросов (для проверки здоровья)"""
+        """Обработка GET запросов"""
         if self.path == '/health':
             self.send_response(200)
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'ok'}).encode())
+        elif self.path == '/add' or self.path == '/add.html':
+            self.send_static_file('add.html')
+        elif self.path == '/' or self.path == '/index.html':
+            self.send_static_file('index.html')
         else:
             self.send_error(404)
+    
+    def send_static_file(self, filename):
+        """Отправляет статический HTML файл"""
+        try:
+            file_path = f'/app/templates/{filename}'
+            with open(file_path, 'r', encoding='utf-8') as f:
+                content = f.read()
+            
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(content.encode('utf-8'))
+        except FileNotFoundError:
+            self.send_error(404)
+        except Exception as e:
+            print(f"Ошибка при чтении файла: {e}")
+            self.send_error(500)
     
     def handle_search(self):
         """Обработка запроса поиска"""
@@ -58,6 +82,46 @@ class APIHandler(BaseHTTPRequestHandler):
         except Exception as e:
             print(f"Ошибка при обработке запроса: {e}")
             self.send_json_response({'error': 'Internal server error'}, 500)
+    
+    def handle_add(self):
+        """Обработка запроса на добавление ошибки"""
+        try:
+            # Читаем тело запроса
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            
+            # Парсим JSON
+            data = json.loads(post_data.decode('utf-8'))
+            
+            # Валидация обязательных полей
+            error_text = data.get('error', '').strip()
+            description = data.get('description', '').strip()
+            
+            if not error_text or not description:
+                self.send_json_response({'success': False, 'error': 'Поля "Ошибка" и "Описание" обязательны'}, 400)
+                return
+            
+            # Формируем данные для БД
+            error_data = {
+                'uuid': str(uuid.uuid4()),
+                'error': error_text,
+                'description': description,
+                'solution': data.get('solution', '').strip(),
+                'tickets': data.get('tickets', []),
+                'tasks': data.get('tasks', [])
+            }
+            
+            # Добавляем в БД
+            if add_error(error_data):
+                self.send_json_response({'success': True, 'message': 'Ошибка успешно добавлена'}, 200)
+            else:
+                self.send_json_response({'success': False, 'error': 'Не удалось добавить ошибку в БД'}, 500)
+            
+        except json.JSONDecodeError:
+            self.send_json_response({'success': False, 'error': 'Invalid JSON'}, 400)
+        except Exception as e:
+            print(f"Ошибка при добавлении: {e}")
+            self.send_json_response({'success': False, 'error': 'Internal server error'}, 500)
     
     def send_json_response(self, data, status_code=200):
         """Отправляет JSON ответ"""

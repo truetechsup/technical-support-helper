@@ -6,6 +6,7 @@ WORKDIR /app
 COPY server.py .
 COPY database.py .
 COPY init_db.py .
+COPY templates/ templates/
 
 # Создаем директорию для БД (будет монтироваться как volume)
 RUN mkdir -p /app/data
