@@ -37,17 +37,12 @@ desktop.ini
 *.bak
 *.backup
 
-# Структура для ВМ (не в Git)
-# Игнорируем всю папку vm, кроме необходимых файлов
-vm/
-!vm/README.md
-!vm/docker-compose.yml
-!vm/scripts/
-!vm/scripts/update.sh
-
-# Явно игнорируем данные ВМ
+# Структура для ВМ
+# Игнорируем только данные и бэкапы, остальное в Git
 vm/data/
 vm/backups/
+vm/**/*.db
+vm/**/*.db-journal
 
 # Виртуальное окружение Python
 .venv/

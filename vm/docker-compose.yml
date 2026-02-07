@@ -1,0 +1,33 @@
+version: '3.8'
+
+services:
+  nginx:
+    build:
+      context: ../app
+      dockerfile: Dockerfile.nginx
+    container_name: support-helper-nginx
+    ports:
+      - "8080:8080"
+    depends_on:
+      - python-server
+    networks:
+      - support-helper-network
+    restart: unless-stopped
+
+  python-server:
+    build:
+      context: ../app
+      dockerfile: Dockerfile.python
+    container_name: support-helper-python
+    volumes:
+      - ./data:/app/data
+    networks:
+      - support-helper-network
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+
+networks:
+  support-helper-network:
+    driver: bridge
+
