@@ -73,8 +73,17 @@ class APIHandler(BaseHTTPRequestHandler):
 
 def run_server(port=8000):
     """Запускает HTTP сервер"""
-    # Инициализируем БД при старте (проверяет наличие и создает таблицы если нужно)
+    from database import is_db_empty
+    from init_db import add_test_data
+    
+    # Инициализируем БД при старте (создает таблицы если нужно)
     init_db()
+    
+    # Если БД пустая, добавляем тестовые данные
+    if is_db_empty():
+        print("База данных пустая, инициализация тестовыми данными...")
+        add_test_data()
+        print("Тестовые данные добавлены!")
     
     server_address = ('0.0.0.0', port)
     httpd = HTTPServer(server_address, APIHandler)
