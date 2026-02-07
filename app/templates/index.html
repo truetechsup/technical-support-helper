@@ -23,7 +23,7 @@
                     <input 
                         type="text" 
                         id="searchInput" 
-                        placeholder="Введите текст ошибки или его часть..."
+                        placeholder="Фильтр по названию ошибки..."
                         autocomplete="off"
                     >
                     <button id="searchButton">Поиск</button>
@@ -37,202 +37,143 @@
         </main>
     </div>
 
-    <!-- Модальное окно подтверждения удаления -->
-    <div id="deleteModal" class="modal">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h2>⚠️ Подтверждение удаления</h2>
-            </div>
-            <div class="modal-body">
-                <p>Вы точно хотите удалить эту ошибку?</p>
-                <p class="modal-warning">⚠️ Действие нельзя будет отменить!</p>
-                <div class="modal-error-preview" id="modalErrorPreview"></div>
-            </div>
-            <div class="modal-footer">
-                <button id="confirmDelete" class="btn-danger">Да, удалить</button>
-                <button id="cancelDelete" class="btn-secondary">Отмена</button>
-            </div>
-        </div>
-    </div>
-
     <script>
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
         const resultsDiv = document.getElementById('results');
         const loadingDiv = document.getElementById('loading');
+        
+        let allErrors = []; // Храним все ошибки
+
+        // Загружаем все ошибки при загрузке страницы
+        window.addEventListener('DOMContentLoaded', function() {
+            loadAllErrors();
+        });
+
+        // Поиск при вводе текста (в реальном времени)
+        searchInput.addEventListener('input', function() {
+            filterErrors();
+        });
 
         // Поиск при нажатии Enter
         searchInput.addEventListener('keypress', function(e) {
             if (e.key === 'Enter') {
-                performSearch();
+                filterErrors();
             }
         });
 
         // Поиск при нажатии кнопки
-        searchButton.addEventListener('click', performSearch);
+        searchButton.addEventListener('click', filterErrors);
 
-        function performSearch() {
-            const query = searchInput.value.trim();
+        function loadAllErrors() {
+            loadingDiv.style.display = 'block';
+            
+            fetch('/api/all')
+                .then(response => response.json())
+                .then(data => {
+                    loadingDiv.style.display = 'none';
+                    
+                    if (data.error) {
+                        resultsDiv.innerHTML = `<div class="error">Ошибка: ${data.error}</div>`;
+                        return;
+                    }
+
+                    allErrors = data.results || [];
+                    displayErrors(allErrors);
+                })
+                .catch(error => {
+                    loadingDiv.style.display = 'none';
+                    resultsDiv.innerHTML = `<div class="error">Ошибка соединения: ${error.message}</div>`;
+                });
+        }
+
+        function filterErrors() {
+            const query = searchInput.value.trim().toLowerCase();
             
             if (!query) {
-                resultsDiv.innerHTML = '<div class="no-results">Введите текст для поиска</div>';
+                displayErrors(allErrors);
                 return;
             }
 
-            // Показываем индикатор загрузки
-            loadingDiv.style.display = 'block';
-            resultsDiv.innerHTML = '';
+            const filtered = allErrors.filter(error => 
+                error.error.toLowerCase().includes(query)
+            );
+            
+            displayErrors(filtered);
+        }
 
-            // AJAX запрос
-            fetch('/api/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
-                body: JSON.stringify({ query: query })
-            })
-            .then(response => response.json())
-            .then(data => {
-                loadingDiv.style.display = 'none';
-                
-                if (data.error) {
-                    resultsDiv.innerHTML = `<div class="error">Ошибка: ${data.error}</div>`;
-                    return;
-                }
+        function displayErrors(results) {
+            if (results.length === 0) {
+                resultsDiv.innerHTML = '<div class="no-results">Ничего не найдено</div>';
+                return;
+            }
 
-                const results = data.results || [];
-                
-                if (results.length === 0) {
-                    resultsDiv.innerHTML = '<div class="no-results">Ничего не найдено</div>';
-                    return;
-                }
-
-                // Отображаем результаты
-                let html = `<div class="results-count">Найдено: ${results.length}</div>`;
-                
-                results.forEach(result => {
-                    html += `
-                        <div class="error-card" data-uuid="${escapeHtml(result.uuid)}">
-                            <div class="error-header">
-                                <h3>${escapeHtml(result.error)}</h3>
-                                <button class="btn-delete" data-uuid="${escapeHtml(result.uuid)}" data-error="${escapeHtml(result.error)}" title="Удалить">
-                                    🗑️
-                                </button>
-                            </div>
-                            
-                            ${result.description ? `
-                                <div class="error-section">
-                                    <strong>Описание:</strong>
-                                    <p>${escapeHtml(result.description)}</p>
-                                </div>
-                            ` : ''}
-                            
-                            ${result.solution ? `
-                                <div class="error-section">
-                                    <strong>Решение:</strong>
-                                    <p>${escapeHtml(result.solution)}</p>
-                                </div>
-                            ` : ''}
-                            
-                            ${result.tickets && result.tickets.length > 0 ? `
-                                <div class="error-section">
-                                    <strong>Номера обращений:</strong>
-                                    <ul class="ticket-list">
-                                        ${result.tickets.map(ticket => `<li>${escapeHtml(ticket)}</li>`).join('')}
-                                    </ul>
-                                </div>
-                            ` : ''}
-                            
-                            ${result.tasks && result.tasks.length > 0 ? `
-                                <div class="error-section">
-                                    <strong>Задачи:</strong>
-                                    <ul class="task-list">
-                                        ${result.tasks.map(task => `<li><a href="${escapeHtml(task)}" target="_blank">${escapeHtml(task)}</a></li>`).join('')}
-                                    </ul>
-                                </div>
-                            ` : ''}
+            let html = `<div class="results-count">Найдено: ${results.length}</div>`;
+            
+            results.forEach(result => {
+                html += `
+                    <div class="error-card" data-uuid="${escapeHtml(result.uuid)}">
+                        <div class="error-header">
+                            <h3>${escapeHtml(result.error)}</h3>
+                            <button class="btn-delete" data-uuid="${escapeHtml(result.uuid)}" title="Удалить">
+                                🗑️
+                            </button>
                         </div>
-                    `;
-                });
+                        
+                        ${result.description ? `
+                            <div class="error-section">
+                                <strong>Описание:</strong>
+                                <p>${escapeHtml(result.description)}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${result.solution ? `
+                            <div class="error-section">
+                                <strong>Решение:</strong>
+                                <p>${escapeHtml(result.solution)}</p>
+                            </div>
+                        ` : ''}
+                        
+                        ${result.tickets && result.tickets.length > 0 ? `
+                            <div class="error-section">
+                                <strong>Номера обращений:</strong>
+                                <ul class="ticket-list">
+                                    ${result.tickets.map(ticket => `<li>${escapeHtml(ticket)}</li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                        
+                        ${result.tasks && result.tasks.length > 0 ? `
+                            <div class="error-section">
+                                <strong>Задачи:</strong>
+                                <ul class="task-list">
+                                    ${result.tasks.map(task => `<li><a href="${escapeHtml(task)}" target="_blank">${escapeHtml(task)}</a></li>`).join('')}
+                                </ul>
+                            </div>
+                        ` : ''}
+                    </div>
+                `;
+            });
 
-                resultsDiv.innerHTML = html;
-                
-                // Добавляем обработчики для кнопок удаления
-                resultsDiv.querySelectorAll('.btn-delete').forEach(btn => {
-                    btn.addEventListener('click', function() {
-                        const uuid = this.getAttribute('data-uuid');
-                        const errorText = this.getAttribute('data-error');
-                        showDeleteModal(uuid, errorText);
-                    });
+            resultsDiv.innerHTML = html;
+            
+            // Добавляем обработчики для кнопок удаления
+            resultsDiv.querySelectorAll('.btn-delete').forEach(btn => {
+                btn.addEventListener('click', function() {
+                    const uuid = this.getAttribute('data-uuid');
+                    deleteError(uuid);
                 });
-            })
-            .catch(error => {
-                loadingDiv.style.display = 'none';
-                resultsDiv.innerHTML = `<div class="error">Ошибка соединения: ${error.message}</div>`;
             });
         }
 
-        function escapeHtml(text) {
-            const div = document.createElement('div');
-            div.textContent = text;
-            return div.innerHTML;
-        }
+        async function deleteError(uuid) {
+            if (!uuid) return;
 
-        // Модальное окно удаления
-        let deleteUuid = null;
-
-        function showDeleteModal(uuid, errorText) {
-            deleteUuid = uuid;
-            const modal = document.getElementById('deleteModal');
-            const preview = document.getElementById('modalErrorPreview');
-            
-            preview.textContent = errorText;
-            modal.style.display = 'flex';
-            modal.style.opacity = '0';
-            
-            // Плавное появление
-            setTimeout(() => {
-                modal.style.opacity = '1';
-            }, 10);
-        }
-
-        function hideDeleteModal() {
-            const modal = document.getElementById('deleteModal');
-            modal.style.opacity = '0';
-            
-            // Ждем окончания анимации перед скрытием
-            setTimeout(() => {
-                modal.style.display = 'none';
-            }, 300);
-            
-            deleteUuid = null;
-        }
-
-        // Обработчики модального окна
-        const modal = document.getElementById('deleteModal');
-        const cancelBtn = document.getElementById('cancelDelete');
-        
-        cancelBtn.addEventListener('click', hideDeleteModal);
-        
-        modal.addEventListener('click', function(e) {
-            if (e.target === this || e.target.closest('.modal-content') === null) {
-                hideDeleteModal();
+            const button = document.querySelector(`.btn-delete[data-uuid="${uuid}"]`);
+            if (button) {
+                button.disabled = true;
+                button.textContent = '...';
             }
-        });
-        
-        // Закрытие по Escape
-        document.addEventListener('keydown', function(e) {
-            if (e.key === 'Escape' && modal.style.display === 'flex') {
-                hideDeleteModal();
-            }
-        });
-
-        document.getElementById('confirmDelete').addEventListener('click', async function() {
-            if (!deleteUuid) return;
-
-            const button = this;
-            button.disabled = true;
-            button.textContent = 'Удаление...';
 
             try {
                 const response = await fetch('/api/delete', {
@@ -240,19 +181,17 @@
                     headers: {
                         'Content-Type': 'application/json',
                     },
-                    body: JSON.stringify({ uuid: deleteUuid })
+                    body: JSON.stringify({ uuid: uuid })
                 });
 
                 const data = await response.json();
 
                 if (response.ok && data.success) {
-                    // Удаляем карточку из DOM
-                    const card = document.querySelector(`[data-uuid="${deleteUuid}"]`);
-                    if (card) {
-                        card.style.animation = 'fadeOut 0.3s';
-                        setTimeout(() => card.remove(), 300);
-                    }
-                    hideDeleteModal();
+                    // Удаляем из массива
+                    allErrors = allErrors.filter(error => error.uuid !== uuid);
+                    
+                    // Обновляем отображение
+                    filterErrors();
                     
                     // Показываем сообщение об успехе
                     const message = document.createElement('div');
@@ -266,10 +205,18 @@
             } catch (error) {
                 alert('Ошибка соединения: ' + error.message);
             } finally {
-                button.disabled = false;
-                button.textContent = 'Да, удалить';
+                if (button) {
+                    button.disabled = false;
+                    button.textContent = '🗑️';
+                }
             }
-        });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
     </script>
 </body>
 </html>

@@ -38,6 +38,47 @@ def init_db():
     conn.commit()
     conn.close()
 
+def get_all_errors() -> List[Dict]:
+    """Получает все ошибки из БД"""
+    conn = get_db_connection()
+    cursor = conn.cursor()
+    
+    cursor.execute('''
+        SELECT uuid, error, description, solution, tickets, tasks
+        FROM errors
+        ORDER BY error
+    ''')
+    
+    results = []
+    for row in cursor.fetchall():
+        # Парсим JSON поля если они есть
+        tickets = []
+        tasks = []
+        
+        if row['tickets']:
+            try:
+                tickets = json.loads(row['tickets'])
+            except:
+                tickets = []
+        
+        if row['tasks']:
+            try:
+                tasks = json.loads(row['tasks'])
+            except:
+                tasks = []
+        
+        results.append({
+            'uuid': row['uuid'],
+            'error': row['error'],
+            'description': row['description'] or '',
+            'solution': row['solution'] or '',
+            'tickets': tickets,
+            'tasks': tasks
+        })
+    
+    conn.close()
+    return results
+
 def search_errors(query: str) -> List[Dict]:
     """Ищет ошибки по тексту (без учета регистра)"""
     if not query or not query.strip():

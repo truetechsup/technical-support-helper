@@ -2,7 +2,7 @@
 import json
 import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from database import search_errors, init_db, add_error, delete_error
+from database import search_errors, init_db, add_error, delete_error, get_all_errors
 import uuid
 
 class APIHandler(BaseHTTPRequestHandler):
@@ -34,6 +34,8 @@ class APIHandler(BaseHTTPRequestHandler):
             self.send_header('Content-Type', 'application/json')
             self.end_headers()
             self.wfile.write(json.dumps({'status': 'ok'}).encode())
+        elif self.path == '/api/all':
+            self.handle_get_all()
         elif self.path == '/add' or self.path == '/add.html':
             self.send_static_file('add.html')
         elif self.path == '/' or self.path == '/index.html':
@@ -151,6 +153,15 @@ class APIHandler(BaseHTTPRequestHandler):
         except Exception as e:
             print(f"Ошибка при удалении: {e}")
             self.send_json_response({'success': False, 'error': 'Internal server error'}, 500)
+    
+    def handle_get_all(self):
+        """Обработка запроса на получение всех ошибок"""
+        try:
+            results = get_all_errors()
+            self.send_json_response({'results': results}, 200)
+        except Exception as e:
+            print(f"Ошибка при получении всех ошибок: {e}")
+            self.send_json_response({'error': 'Internal server error'}, 500)
     
     def send_json_response(self, data, status_code=200):
         """Отправляет JSON ответ"""
