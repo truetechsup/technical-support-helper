@@ -1,0 +1,42 @@
+version: '3.8'
+
+# Docker Compose для разработки с монтированием кода
+# Использование: docker compose -f docker-compose.dev.yml up
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: errors-nginx
+    ports:
+      - "8080:8080"
+    depends_on:
+      - python-server
+    networks:
+      - errors-network
+    restart: unless-stopped
+    volumes:
+      - ./templates:/usr/share/nginx/html:ro
+      - ./static:/usr/share/nginx/html/static:ro
+
+  python-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: errors-python
+    volumes:
+      - ./data:/app/data
+      - ./server.py:/app/server.py:ro
+      - ./database.py:/app/database.py:ro
+      - ./init_db.py:/app/init_db.py:ro
+    networks:
+      - errors-network
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+
+networks:
+  errors-network:
+    driver: bridge
+

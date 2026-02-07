@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Поиск ошибок - Техническая поддержка</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🔍 Поиск ошибок</h1>
+            <p class="subtitle">Система помощи сотрудникам технической поддержки</p>
+        </header>
+
+        <main>
+            <div class="search-section">
+                <div class="search-box">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Введите текст ошибки или его часть..."
+                        autocomplete="off"
+                    >
+                    <button id="searchButton">Поиск</button>
+                </div>
+                <div id="loading" class="loading" style="display: none;">
+                    Поиск...
+                </div>
+            </div>
+
+            <div id="results" class="results"></div>
+        </main>
+    </div>
+
+    <script>
+        const searchInput = document.getElementById('searchInput');
+        const searchButton = document.getElementById('searchButton');
+        const resultsDiv = document.getElementById('results');
+        const loadingDiv = document.getElementById('loading');
+
+        // Поиск при нажатии Enter
+        searchInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                performSearch();
+            }
+        });
+
+        // Поиск при нажатии кнопки
+        searchButton.addEventListener('click', performSearch);
+
+        function performSearch() {
+            const query = searchInput.value.trim();
+            
+            if (!query) {
+                resultsDiv.innerHTML = '<div class="no-results">Введите текст для поиска</div>';
+                return;
+            }
+
+            // Показываем индикатор загрузки
+            loadingDiv.style.display = 'block';
+            resultsDiv.innerHTML = '';
+
+            // AJAX запрос
+            fetch('/api/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ query: query })
+            })
+            .then(response => response.json())
+            .then(data => {
+                loadingDiv.style.display = 'none';
+                
+                if (data.error) {
+                    resultsDiv.innerHTML = `<div class="error">Ошибка: ${data.error}</div>`;
+                    return;
+                }
+
+                const results = data.results || [];
+                
+                if (results.length === 0) {
+                    resultsDiv.innerHTML = '<div class="no-results">Ничего не найдено</div>';
+                    return;
+                }
+
+                // Отображаем результаты
+                let html = `<div class="results-count">Найдено: ${results.length}</div>`;
+                
+                results.forEach(result => {
+                    html += `
+                        <div class="error-card">
+                            <div class="error-header">
+                                <h3>${escapeHtml(result.error)}</h3>
+                            </div>
+                            
+                            ${result.description ? `
+                                <div class="error-section">
+                                    <strong>Описание:</strong>
+                                    <p>${escapeHtml(result.description)}</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${result.solution ? `
+                                <div class="error-section">
+                                    <strong>Решение:</strong>
+                                    <p>${escapeHtml(result.solution)}</p>
+                                </div>
+                            ` : ''}
+                            
+                            ${result.tickets && result.tickets.length > 0 ? `
+                                <div class="error-section">
+                                    <strong>Номера обращений:</strong>
+                                    <ul class="ticket-list">
+                                        ${result.tickets.map(ticket => `<li>${escapeHtml(ticket)}</li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                            
+                            ${result.tasks && result.tasks.length > 0 ? `
+                                <div class="error-section">
+                                    <strong>Задачи:</strong>
+                                    <ul class="task-list">
+                                        ${result.tasks.map(task => `<li><a href="${escapeHtml(task)}" target="_blank">${escapeHtml(task)}</a></li>`).join('')}
+                                    </ul>
+                                </div>
+                            ` : ''}
+                        </div>
+                    `;
+                });
+
+                resultsDiv.innerHTML = html;
+            })
+            .catch(error => {
+                loadingDiv.style.display = 'none';
+                resultsDiv.innerHTML = `<div class="error">Ошибка соединения: ${error.message}</div>`;
+            });
+        }
+
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+    </script>
+</body>
+</html>
+

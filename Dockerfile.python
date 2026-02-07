@@ -1,0 +1,15 @@
+FROM python:3.11-slim
+
+WORKDIR /app
+
+# Копируем файлы приложения
+COPY server.py .
+COPY database.py .
+COPY init_db.py .
+
+# Создаем директорию для БД
+RUN mkdir -p /app/data
+
+# Запускаем сервер
+CMD ["python3", "server.py"]
+

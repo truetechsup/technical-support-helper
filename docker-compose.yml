@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  nginx:
+    build:
+      context: .
+      dockerfile: Dockerfile.nginx
+    container_name: errors-nginx
+    ports:
+      - "8080:8080"
+    depends_on:
+      - python-server
+    networks:
+      - errors-network
+    restart: unless-stopped
+
+  python-server:
+    build:
+      context: .
+      dockerfile: Dockerfile.python
+    container_name: errors-python
+    volumes:
+      - ./data:/app/data
+    networks:
+      - errors-network
+    restart: unless-stopped
+    environment:
+      - PYTHONUNBUFFERED=1
+
+networks:
+  errors-network:
+    driver: bridge
+
+volumes:
+  data:
+
