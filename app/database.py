@@ -155,6 +155,20 @@ def add_error(error_data: Dict) -> bool:
         print(f"Ошибка при добавлении: {e}")
         return False
 
+def delete_error(uuid: str) -> bool:
+    """Удаляет ошибку по UUID"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('DELETE FROM errors WHERE uuid = ?', (uuid,))
+        conn.commit()
+        deleted = cursor.rowcount > 0
+        conn.close()
+        return deleted
+    except Exception as e:
+        print(f"Ошибка при удалении: {e}")
+        return False
+
 def is_db_empty() -> bool:
     """Проверяет, пустая ли БД"""
     try:

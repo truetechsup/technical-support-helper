@@ -2,7 +2,7 @@
 import json
 import urllib.parse
 from http.server import HTTPServer, BaseHTTPRequestHandler
-from database import search_errors, init_db, add_error
+from database import search_errors, init_db, add_error, delete_error
 import uuid
 
 class APIHandler(BaseHTTPRequestHandler):
@@ -22,6 +22,8 @@ class APIHandler(BaseHTTPRequestHandler):
             self.handle_search()
         elif self.path == '/api/add':
             self.handle_add()
+        elif self.path == '/api/delete':
+            self.handle_delete()
         else:
             self.send_error(404)
     
@@ -121,6 +123,33 @@ class APIHandler(BaseHTTPRequestHandler):
             self.send_json_response({'success': False, 'error': 'Invalid JSON'}, 400)
         except Exception as e:
             print(f"Ошибка при добавлении: {e}")
+            self.send_json_response({'success': False, 'error': 'Internal server error'}, 500)
+    
+    def handle_delete(self):
+        """Обработка запроса на удаление ошибки"""
+        try:
+            # Читаем тело запроса
+            content_length = int(self.headers.get('Content-Length', 0))
+            post_data = self.rfile.read(content_length)
+            
+            # Парсим JSON
+            data = json.loads(post_data.decode('utf-8'))
+            uuid = data.get('uuid', '').strip()
+            
+            if not uuid:
+                self.send_json_response({'success': False, 'error': 'UUID не указан'}, 400)
+                return
+            
+            # Удаляем из БД
+            if delete_error(uuid):
+                self.send_json_response({'success': True, 'message': 'Ошибка успешно удалена'}, 200)
+            else:
+                self.send_json_response({'success': False, 'error': 'Ошибка не найдена или не удалось удалить'}, 404)
+            
+        except json.JSONDecodeError:
+            self.send_json_response({'success': False, 'error': 'Invalid JSON'}, 400)
+        except Exception as e:
+            print(f"Ошибка при удалении: {e}")
             self.send_json_response({'success': False, 'error': 'Internal server error'}, 500)
     
     def send_json_response(self, data, status_code=200):

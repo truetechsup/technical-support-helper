@@ -37,6 +37,24 @@
         </main>
     </div>
 
+    <!-- Модальное окно подтверждения удаления -->
+    <div id="deleteModal" class="modal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>⚠️ Подтверждение удаления</h2>
+            </div>
+            <div class="modal-body">
+                <p>Вы точно хотите удалить эту ошибку?</p>
+                <p class="modal-warning">⚠️ Действие нельзя будет отменить!</p>
+                <div class="modal-error-preview" id="modalErrorPreview"></div>
+            </div>
+            <div class="modal-footer">
+                <button id="confirmDelete" class="btn-danger">Да, удалить</button>
+                <button id="cancelDelete" class="btn-secondary">Отмена</button>
+            </div>
+        </div>
+    </div>
+
     <script>
         const searchInput = document.getElementById('searchInput');
         const searchButton = document.getElementById('searchButton');
@@ -94,9 +112,12 @@
                 
                 results.forEach(result => {
                     html += `
-                        <div class="error-card">
+                        <div class="error-card" data-uuid="${escapeHtml(result.uuid)}">
                             <div class="error-header">
                                 <h3>${escapeHtml(result.error)}</h3>
+                                <button class="btn-delete" data-uuid="${escapeHtml(result.uuid)}" data-error="${escapeHtml(result.error)}" title="Удалить">
+                                    🗑️
+                                </button>
                             </div>
                             
                             ${result.description ? `
@@ -135,6 +156,15 @@
                 });
 
                 resultsDiv.innerHTML = html;
+                
+                // Добавляем обработчики для кнопок удаления
+                resultsDiv.querySelectorAll('.btn-delete').forEach(btn => {
+                    btn.addEventListener('click', function() {
+                        const uuid = this.getAttribute('data-uuid');
+                        const errorText = this.getAttribute('data-error');
+                        showDeleteModal(uuid, errorText);
+                    });
+                });
             })
             .catch(error => {
                 loadingDiv.style.display = 'none';
@@ -147,6 +177,71 @@
             div.textContent = text;
             return div.innerHTML;
         }
+
+        // Модальное окно удаления
+        let deleteUuid = null;
+
+        function showDeleteModal(uuid, errorText) {
+            deleteUuid = uuid;
+            document.getElementById('modalErrorPreview').textContent = errorText;
+            document.getElementById('deleteModal').style.display = 'flex';
+        }
+
+        function hideDeleteModal() {
+            document.getElementById('deleteModal').style.display = 'none';
+            deleteUuid = null;
+        }
+
+        document.getElementById('cancelDelete').addEventListener('click', hideDeleteModal);
+        document.getElementById('deleteModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                hideDeleteModal();
+            }
+        });
+
+        document.getElementById('confirmDelete').addEventListener('click', async function() {
+            if (!deleteUuid) return;
+
+            const button = this;
+            button.disabled = true;
+            button.textContent = 'Удаление...';
+
+            try {
+                const response = await fetch('/api/delete', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ uuid: deleteUuid })
+                });
+
+                const data = await response.json();
+
+                if (response.ok && data.success) {
+                    // Удаляем карточку из DOM
+                    const card = document.querySelector(`[data-uuid="${deleteUuid}"]`);
+                    if (card) {
+                        card.style.animation = 'fadeOut 0.3s';
+                        setTimeout(() => card.remove(), 300);
+                    }
+                    hideDeleteModal();
+                    
+                    // Показываем сообщение об успехе
+                    const message = document.createElement('div');
+                    message.className = 'success-message';
+                    message.textContent = '✅ Ошибка успешно удалена';
+                    resultsDiv.insertBefore(message, resultsDiv.firstChild);
+                    setTimeout(() => message.remove(), 3000);
+                } else {
+                    alert('Ошибка: ' + (data.error || 'Не удалось удалить ошибку'));
+                }
+            } catch (error) {
+                alert('Ошибка соединения: ' + error.message);
+            } finally {
+                button.disabled = false;
+                button.textContent = 'Да, удалить';
+            }
+        });
     </script>
 </body>
 </html>
