@@ -9,7 +9,8 @@ dist/
 build/
 
 # База данных
-data/
+data/*
+!data/.gitkeep
 *.db
 *.db-journal
 *.sqlite

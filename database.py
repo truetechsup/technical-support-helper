@@ -154,3 +154,16 @@ def add_error(error_data: Dict) -> bool:
         print(f"Ошибка при добавлении: {e}")
         return False
 
+def is_db_empty() -> bool:
+    """Проверяет, пустая ли БД"""
+    try:
+        conn = get_db_connection()
+        cursor = conn.cursor()
+        cursor.execute('SELECT COUNT(*) as count FROM errors')
+        count = cursor.fetchone()['count']
+        conn.close()
+        return count == 0
+    except:
+        # Если таблицы нет или ошибка - считаем пустой
+        return True
+
