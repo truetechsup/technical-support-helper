@@ -313,13 +313,14 @@ main {
 }
 
 /* Форма добавления */
-.add-form {
-    max-width: 800px;
+main .add-form {
+    max-width: 850px;
     margin: 0 auto;
     background: linear-gradient(135deg, #f5f7fa 0%, #ffffff 100%);
-    padding: 30px;
-    border-radius: 16px;
-    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+    padding: 40px;
+    border-radius: 20px;
+    box-shadow: 0 8px 30px rgba(0, 0, 0, 0.12);
+    border: 1px solid rgba(102, 126, 234, 0.1);
 }
 
 .form-group {
@@ -396,25 +397,33 @@ main {
 .btn-primary {
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
     color: white;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    border: none;
 }
 
 .btn-primary:hover:not(:disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+    box-shadow: 0 6px 20px rgba(102, 126, 234, 0.4);
+    background: linear-gradient(135deg, #764ba2 0%, #667eea 100%);
 }
 
 .btn-primary:disabled {
     opacity: 0.6;
     cursor: not-allowed;
+    transform: none;
 }
 
 .btn-secondary {
-    background: #f5f5f5;
+    background: linear-gradient(135deg, #f5f5f5 0%, #e8e8e8 100%);
     color: #333;
+    border: 2px solid #e0e0e0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .btn-secondary:hover {
-    background: #e0e0e0;
+    background: linear-gradient(135deg, #e8e8e8 0%, #d0d0d0 100%);
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
 }
 
 .message {
@@ -438,22 +447,25 @@ main {
 
 /* Модальное окно */
 .modal {
-    display: none;
+    display: none !important;
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.6);
-    backdrop-filter: blur(5px);
-    z-index: 1000;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(8px);
+    z-index: 10000;
     align-items: center;
     justify-content: center;
-    animation: fadeIn 0.3s ease;
+    opacity: 0;
+    transition: opacity 0.3s ease;
 }
 
-.modal.show {
-    display: flex;
+.modal[style*="display: flex"] {
+    display: flex !important;
+    opacity: 1;
+    animation: fadeIn 0.3s ease;
 }
 
 @keyframes fadeIn {
@@ -467,12 +479,15 @@ main {
 
 .modal-content {
     background: white;
-    border-radius: 16px;
-    box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-    max-width: 500px;
+    border-radius: 20px;
+    box-shadow: 0 25px 80px rgba(0, 0, 0, 0.4);
+    max-width: 520px;
     width: 90%;
-    animation: slideUp 0.3s ease;
-    overflow: hidden;
+    max-height: 90vh;
+    overflow-y: auto;
+    animation: slideUp 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform-origin: center;
+    border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 @keyframes slideUp {
@@ -489,55 +504,80 @@ main {
 .modal-header {
     background: linear-gradient(135deg, #f44336 0%, #d32f2f 100%);
     color: white;
-    padding: 20px 25px;
+    padding: 25px 30px;
     text-align: center;
+    position: relative;
+}
+
+.modal-header::after {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 3px;
+    background: rgba(255, 255, 255, 0.3);
 }
 
 .modal-header h2 {
     margin: 0;
-    font-size: 1.5em;
+    font-size: 1.6em;
+    font-weight: 700;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+    letter-spacing: 0.5px;
 }
 
 .modal-body {
-    padding: 25px;
+    padding: 30px;
+    background: linear-gradient(135deg, #fafafa 0%, #ffffff 100%);
 }
 
 .modal-body p {
-    margin-bottom: 15px;
+    margin-bottom: 18px;
     color: #333;
-    font-size: 16px;
-    line-height: 1.6;
+    font-size: 17px;
+    line-height: 1.7;
+    text-align: center;
 }
 
 .modal-warning {
     color: #d32f2f;
-    font-weight: 600;
-    font-size: 1.1em;
+    font-weight: 700;
+    font-size: 1.15em;
     text-align: center;
-    padding: 15px;
-    background: #ffebee;
-    border-radius: 8px;
-    margin: 20px 0;
+    padding: 18px 20px;
+    background: linear-gradient(135deg, #ffebee 0%, #ffcdd2 100%);
+    border-radius: 12px;
+    margin: 25px 0;
+    border: 2px solid #f44336;
+    box-shadow: 0 4px 12px rgba(244, 67, 54, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
 }
 
 .modal-error-preview {
-    background: #f5f5f5;
-    padding: 15px;
-    border-radius: 8px;
-    border-left: 4px solid #667eea;
+    background: linear-gradient(135deg, #f5f5f5 0%, #ffffff 100%);
+    padding: 18px 20px;
+    border-radius: 12px;
+    border-left: 5px solid #667eea;
     font-weight: 600;
     color: #333;
-    margin-top: 15px;
+    margin-top: 20px;
     word-break: break-word;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    font-size: 15px;
+    text-align: center;
 }
 
 .modal-footer {
-    padding: 20px 25px;
+    padding: 25px 30px;
     display: flex;
     gap: 15px;
     justify-content: flex-end;
-    background: #f9f9f9;
-    border-top: 1px solid #e0e0e0;
+    background: linear-gradient(135deg, #f9f9f9 0%, #ffffff 100%);
+    border-top: 2px solid #e0e0e0;
 }
 
 .btn-danger {

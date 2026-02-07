@@ -183,18 +183,46 @@
 
         function showDeleteModal(uuid, errorText) {
             deleteUuid = uuid;
-            document.getElementById('modalErrorPreview').textContent = errorText;
-            document.getElementById('deleteModal').style.display = 'flex';
+            const modal = document.getElementById('deleteModal');
+            const preview = document.getElementById('modalErrorPreview');
+            
+            preview.textContent = errorText;
+            modal.style.display = 'flex';
+            modal.style.opacity = '0';
+            
+            // Плавное появление
+            setTimeout(() => {
+                modal.style.opacity = '1';
+            }, 10);
         }
 
         function hideDeleteModal() {
-            document.getElementById('deleteModal').style.display = 'none';
+            const modal = document.getElementById('deleteModal');
+            modal.style.opacity = '0';
+            
+            // Ждем окончания анимации перед скрытием
+            setTimeout(() => {
+                modal.style.display = 'none';
+            }, 300);
+            
             deleteUuid = null;
         }
 
-        document.getElementById('cancelDelete').addEventListener('click', hideDeleteModal);
-        document.getElementById('deleteModal').addEventListener('click', function(e) {
-            if (e.target === this) {
+        // Обработчики модального окна
+        const modal = document.getElementById('deleteModal');
+        const cancelBtn = document.getElementById('cancelDelete');
+        
+        cancelBtn.addEventListener('click', hideDeleteModal);
+        
+        modal.addEventListener('click', function(e) {
+            if (e.target === this || e.target.closest('.modal-content') === null) {
+                hideDeleteModal();
+            }
+        });
+        
+        // Закрытие по Escape
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape' && modal.style.display === 'flex') {
                 hideDeleteModal();
             }
         });
