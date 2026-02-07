@@ -9,8 +9,6 @@ dist/
 build/
 
 # База данных
-data/*
-!data/.gitkeep
 *.db
 *.db-journal
 *.sqlite
@@ -39,3 +37,25 @@ desktop.ini
 *.bak
 *.backup
 
+# Структура для ВМ (не в Git)
+# Игнорируем всю папку vm, кроме необходимых файлов
+vm/
+!vm/README.md
+!vm/docker-compose.yml
+!vm/scripts/
+!vm/scripts/update.sh
+
+# Явно игнорируем данные ВМ
+vm/data/
+vm/backups/
+vm/app/
+
+# Виртуальное окружение Python
+.venv/
+venv/
+env/
+
+# Старые файлы (удалены)
+# data/ - теперь только в vm/data/
+# deploy.sh, deploy-git.sh, update.sh - удалены
+# docker-compose.dev.yml, DEVELOPMENT.md, QUICKSTART.md - удалены

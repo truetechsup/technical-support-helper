@@ -3,7 +3,8 @@ import json
 import os
 from typing import List, Dict, Optional
 
-DB_PATH = '/app/data/errors.db'
+# Путь к БД задается через переменную окружения или по умолчанию
+DB_PATH = os.environ.get('DB_PATH', '/app/data/support-helper.db')
 
 def get_db_connection():
     """Создает и возвращает соединение с БД"""

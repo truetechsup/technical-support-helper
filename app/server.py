@@ -73,7 +73,7 @@ class APIHandler(BaseHTTPRequestHandler):
 
 def run_server(port=8000):
     """Запускает HTTP сервер"""
-    # Инициализируем БД при старте
+    # Инициализируем БД при старте (проверяет наличие и создает таблицы если нужно)
     init_db()
     
     server_address = ('0.0.0.0', port)

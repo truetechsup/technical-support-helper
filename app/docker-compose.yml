@@ -5,32 +5,29 @@ services:
     build:
       context: .
       dockerfile: Dockerfile.nginx
-    container_name: errors-nginx
+    container_name: support-helper-nginx
     ports:
       - "8080:8080"
     depends_on:
       - python-server
     networks:
-      - errors-network
+      - support-helper-network
     restart: unless-stopped
 
   python-server:
     build:
       context: .
       dockerfile: Dockerfile.python
-    container_name: errors-python
+    container_name: support-helper-python
     volumes:
-      - ./data:/app/data
+      - ../data:/app/data
     networks:
-      - errors-network
+      - support-helper-network
     restart: unless-stopped
     environment:
       - PYTHONUNBUFFERED=1
 
 networks:
-  errors-network:
+  support-helper-network:
     driver: bridge
-
-volumes:
-  data:
 

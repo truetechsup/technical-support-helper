@@ -7,7 +7,7 @@ COPY server.py .
 COPY database.py .
 COPY init_db.py .
 
-# Создаем директорию для БД
+# Создаем директорию для БД (будет монтироваться как volume)
 RUN mkdir -p /app/data
 
 # Запускаем сервер
